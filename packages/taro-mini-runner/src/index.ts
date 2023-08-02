@@ -6,7 +6,7 @@ import { printBuildError, bindProdLogger, bindDevLogger } from './utils/logHelpe
 import baseConf from './webpack/base.conf'
 import buildConf from './webpack/build.conf'
 
-const customizeChain = async (chain, modifyWebpackChainFunc: Function, customizeFunc?: Function) => {
+const customizeChain = async (chain, modifyWebpackChainFunc: Function | null, customizeFunc?: Function) => {
   if (modifyWebpackChainFunc instanceof Function) {
     await modifyWebpackChainFunc(chain, webpack)
   }
@@ -18,9 +18,10 @@ const customizeChain = async (chain, modifyWebpackChainFunc: Function, customize
 export default async function build (appPath: string, config: IBuildConfig) {
   const mode = config.mode
   const baseWebpackChain = baseConf(appPath)
-  await customizeChain(baseWebpackChain, config.modifyWebpackChain, config.webpackChain)
+  await customizeChain(baseWebpackChain, config.modifyWebpackChain)
   const buildWebpackConf = buildConf(appPath, mode, config, baseWebpackChain)
   const webpackChain = baseWebpackChain.merge(buildWebpackConf)
+  await customizeChain(webpackChain, null, config.webpackChain)
   const webpackConfig = webpackChain.toConfig()
   const onBuildFinish = config.onBuildFinish
   const compiler = webpack(webpackConfig)
